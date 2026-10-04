@@ -1,0 +1,23 @@
+{
+  "updated": "2026-10-04T10:55:00.027Z",
+  "summary": {
+    "real_packs": 0,
+    "real_packs_online": 0,
+    "active_twins": 0,
+    "evaluated": 0
+  },
+  "repo": {
+    "stars": 0,
+    "forks": 0,
+    "watchers": 0
+  },
+  "probes": {
+    "zhou-yu-demo": {
+      "handle": "zhou-yu-demo",
+      "reachable": true,
+      "mcp": true,
+      "version": "0.1.0",
+      "active_days_28d": 1
+    }
+  }
+}
