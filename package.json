@@ -1,0 +1,36 @@
+{
+  "name": "twinkit",
+  "version": "0.1.0",
+  "description": "把你的工作方式做成任何 AI 都能接入的数字分身（MCP 服务器），并用盲评量化“像不像本人”。",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "new": "node scripts/new.mjs",
+    "validate": "node scripts/validate.mjs",
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs",
+    "stdio": "node scripts/stdio.mjs",
+    "deploy": "npx wrangler@latest deploy",
+    "test": "node --test",
+    "eval": "node eval/run.mjs",
+    "eval:analyze": "node eval/analyze.mjs",
+    "gallery": "node scripts/gallery-check.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chiniyaocy-dotcom/twinkit.git"
+  },
+  "keywords": [
+    "digital-twin",
+    "mcp",
+    "model-context-protocol",
+    "cloudflare-workers",
+    "persona",
+    "ai-agent",
+    "evaluation"
+  ]
+}

@@ -1,0 +1,38 @@
+name: 生成评测盲评包
+
+# 手动运行：用 GitHub Models（免费额度）为人格包生成三种条件的回答，打包成盲评文件。
+# 生成的 rate.html 可以直接发给评委；key.json 是答案表，只在 artifact 里，不会提交到仓库。
+on:
+  workflow_dispatch:
+    inputs:
+      persona:
+        description: 人格包目录
+        default: persona
+      tasks:
+        description: 任务文件
+        default: eval/tasks.md
+      model:
+        description: GitHub Models 的模型
+        default: openai/gpt-4.1-mini
+
+permissions:
+  contents: read
+  models: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 生成回答与盲评包
+        run: node eval/run.mjs --provider github --persona "${{ inputs.persona }}" --tasks "${{ inputs.tasks }}" --model "${{ inputs.model }}" --out eval-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: eval-run
+          path: eval-run/
+          retention-days: 30

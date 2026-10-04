@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TwinKit 盲评</title>
+<style>
+:root{--fg:#1f2328;--muted:#57606a;--line:#d0d7de;--bg:#f6f8fa;--accent:#0969da}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+main{max-width:860px;margin:0 auto;padding:28px 16px 80px}h1{font-size:26px;margin:.2em 0}h2{font-size:20px;margin:1.2em 0 .4em}
+.muted{color:var(--muted)}.card,.cand,.pick{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:14px 0}
+label{display:block;margin:12px 0}input[type=text],select{display:block;width:100%;max-width:420px;padding:8px 10px;margin-top:4px;font-size:16px;border:1px solid var(--line);border-radius:6px}
+button{font-size:16px;padding:9px 18px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer}button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button:disabled{opacity:.4;cursor:default}
+.bar{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}.bar progress{flex:1}
+.task{white-space:pre-wrap;background:var(--bg);border-radius:6px;padding:10px 12px;margin-top:6px}
+.text{white-space:pre-wrap;word-break:break-word;font-size:15px;max-height:520px;overflow:auto;border-bottom:1px dashed var(--line);padding-bottom:10px;margin-bottom:8px}
+.text .h{display:inline-block;margin-top:4px}
+.scale{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}.scale>span:first-child{width:7.5em;font-weight:600}
+.r{display:inline-flex;margin:0}.r input{display:none}.r span{display:inline-block;min-width:38px;text-align:center;padding:4px 0;border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.r input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.legend{font-size:12px;color:var(--muted);margin-left:7.5em}
+.choice label{display:inline-block;margin:4px 14px 4px 0}
+.missing{outline:2px solid #cf222e;outline-offset:3px}
+.nav{display:flex;justify-content:space-between;margin-top:18px}
+textarea{width:100%;height:160px;font:12px ui-monospace,Menlo,monospace}
+code{background:var(--bg);padding:1px 5px;border-radius:4px}
+</style>
+<!--TWINKIT_PACK-->
+</head>
+<body>
+<main id="app"><p>加载中…</p></main>
+<script>
+(function () {
+  "use strict";
+  var app = document.getElementById("app");
+  var pack = window.TWINKIT_PACK || null;
+  var state = null;
+  var RELATIONS = [["self", "我就是本人"], ["colleague", "同事 / 合作过"], ["friend", "朋友 / 家人"], ["acquaintance", "看过 TA 的作品，但不熟"], ["other", "其他"]];
+  var FAMILIARITY = ["", "几乎不了解", "了解一点", "一般", "比较了解", "非常了解"];
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function md(s) {
+    return esc(s).split("\n").map(function (l) {
+      var m = l.match(/^#{1,6}\s+(.*)$/);
+      if (m) return '<strong class="h">' + m[1] + "</strong>";
+      l = l.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+      m = l.match(/^(\s*)[-*]\s+(.*)$/);
+      if (m) return m[1] + "• " + m[2];
+      return l;
+    }).join("\n");
+  }
+  function seedFrom(text) {
+    var h = 0x811c9dc5;
+    for (var i = 0; i < text.length; i++) { h ^= text.charCodeAt(i); h = Math.imul(h, 0x01000193); }
+    return h >>> 0;
+  }
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function order(task) {
+    var r = rng(seedFrom(state.rater.id + "|" + task.task_id));
+    var a = task.candidates.slice();
+    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(r() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+  function storageKey(id) { return "twinkit:" + pack.pack_id + ":" + id; }
+  function save() { try { localStorage.setItem(storageKey(state.rater.id), JSON.stringify(state)); } catch (e) {} }
+  function load(id) { try { return JSON.parse(localStorage.getItem(storageKey(id)) || "null"); } catch (e) { return null; } }
+  function valid(p) { return p && p.format === "twinkit-rating-pack/1" && Array.isArray(p.tasks) && p.tasks.length; }
+
+  function renderLoad(msg) {
+    app.innerHTML = "<h1>TwinKit 盲评</h1>" + (msg ? '<p style="color:#cf222e">' + esc(msg) + "</p>" : "") +
+      "<p>请选择组织者发给你的 <code>rating-pack.json</code>：</p><input type=\"file\" id=\"file\" accept=\".json,application/json\">" +
+      '<p class="muted">文件只在你的浏览器里读取，不会上传到任何地方。</p>';
+    document.getElementById("file").onchange = function (e) {
+      var f = e.target.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try { var p = JSON.parse(reader.result); if (!valid(p)) throw new Error("不是 TwinKit 盲评包"); pack = p; renderStart(); }
+        catch (err) { renderLoad("文件格式不对：" + err.message); }
+      };
+      reader.readAsText(f, "utf-8");
+    };
+  }
+
+  function renderStart() {
+    var n = pack.tasks[0].candidates.length;
+    var name = esc(pack.persona.name);
+    app.innerHTML = "<h1>给「" + name + "」的回答打分</h1><p class=\"muted\">" + esc(pack.persona.role || "") + "</p>" +
+      '<div class="card"><p>一共 ' + pack.tasks.length + " 个任务，每个任务有 " + n + " 份回答。回答的来源已经被打乱、隐藏。请按你对「" + name + "」的了解判断：</p><ul>" +
+      "<li><b>像不像本人</b>：这份东西有多像 TA 本人会交出来的？（不是写得好不好，是像不像 TA）</li>" +
+      "<li><b>能不能直接用</b>：如果你是收到它的人，能直接用吗？</li>" +
+      "<li>每个任务选一份<b>最像本人</b>的。</li>" +
+      (pack.has_human ? "<li>其中有一份可能是本人亲手写的——猜猜是哪一份。</li>" : "") +
+      "</ul><p>大约需要 " + Math.max(5, Math.round(pack.tasks.length * n * 0.6)) + " 分钟。进度会自动保存在这个浏览器里，可以分几次做完。</p></div>" +
+      '<label>你的代号（不用真名；每位评委各用一个，每次都用同一个）<input type="text" id="rid" maxlength="40" autocomplete="off"></label>' +
+      '<p id="resume" class="muted" hidden></p>' +
+      '<label>你和 TA 的关系<select id="rel"><option value="" selected disabled>请选择</option>' + RELATIONS.map(function (r) { return '<option value="' + r[0] + '">' + r[1] + "</option>"; }).join("") + "</select></label>" +
+      '<label>你有多了解 TA 的工作方式？<select id="fam"><option value="" selected disabled>请选择</option>' + [5, 4, 3, 2, 1].map(function (v) { return '<option value="' + v + '">' + v + " · " + FAMILIARITY[v] + "</option>"; }).join("") + "</select></label>" +
+      '<p><button class="primary" id="go">开始</button></p>';
+    var rid = document.getElementById("rid"), relSel = document.getElementById("rel"), famSel = document.getElementById("fam");
+    var note = document.getElementById("resume"), go = document.getElementById("go");
+    rid.oninput = function () {
+      var prev = rid.value.trim() ? load(rid.value.trim()) : null;
+      if (prev && prev.rater) {
+        if (prev.rater.relation) relSel.value = prev.rater.relation;
+        if (prev.rater.familiarity) famSel.value = String(prev.rater.familiarity);
+        note.textContent = "找到这个代号之前的进度：已完成 " + doneCount(prev) + " / " + pack.tasks.length + " 个任务，点“继续”接着做。";
+        note.hidden = false;
+        go.textContent = "继续";
+      } else {
+        note.hidden = true;
+        go.textContent = "开始";
+      }
+    };
+    go.onclick = function () {
+      var id = rid.value.trim();
+      if (!id) { alert("请先填一个代号"); rid.focus(); return; }
+      if (!relSel.value) { alert("请选择你和 TA 的关系"); relSel.focus(); return; }
+      if (!famSel.value) { alert("请选择你对 TA 工作方式的了解程度"); famSel.focus(); return; }
+      state = load(id) || { rater: { id: id }, i: 0, answers: {} };
+      state.rater.relation = relSel.value;
+      state.rater.familiarity = Number(famSel.value);
+      save();
+      renderTask();
+    };
+  }
+
+  function taskDone(t, a) {
+    if (!a || !a.most_like) return false;
+    return t.candidates.every(function (c) { var r = a.ratings[c.label]; return r && r.likeness && r.usable; });
+  }
+  function doneCount(s) {
+    return pack.tasks.filter(function (t) { return taskDone(t, s.answers && s.answers[t.task_id]); }).length;
+  }
+
+  function scale(name, value, labels) {
+    var html = "";
+    for (var v = 1; v <= 5; v++) {
+      html += '<label class="r" title="' + esc(labels[v - 1]) + '"><input type="radio" name="' + name + '" value="' + v + '"' + (value === v ? " checked" : "") + "><span>" + v + "</span></label>";
+    }
+    return html;
+  }
+
+  function renderTask() {
+    var t = pack.tasks[state.i];
+    var a = state.answers[t.task_id] || (state.answers[t.task_id] = { ratings: {}, most_like: null, guess_human: null });
+    var cands = order(t);
+    var last = state.i === pack.tasks.length - 1;
+    var L = pack.scales.likeness, U = pack.scales.usable;
+    var html = '<div class="bar"><span>任务 ' + (state.i + 1) + " / " + pack.tasks.length + '</span><progress max="' + pack.tasks.length + '" value="' + state.i + '"></progress><span>' + esc(state.rater.id) + "</span></div>" +
+      "<h2>" + esc(t.title) + '</h2><details><summary>任务原文</summary><div class="task">' + esc(t.prompt) + "</div></details>";
+    cands.forEach(function (c, idx) {
+      var r = a.ratings[c.label] || {};
+      html += '<section class="cand" id="c_' + c.label + '"><h3>回答 ' + (idx + 1) + '</h3><div class="text">' + md(c.text) + "</div>" +
+        '<div class="scale"><span>像不像本人</span>' + scale("l_" + c.label, r.likeness, L) + "</div>" +
+        '<div class="legend">1 ' + esc(L[0]) + " · 3 " + esc(L[2]) + " · 5 " + esc(L[4]) + "</div>" +
+        '<div class="scale"><span>能不能直接用</span>' + scale("u_" + c.label, r.usable, U) + "</div>" +
+        '<div class="legend">1 ' + esc(U[0]) + " · 3 " + esc(U[2]) + " · 5 " + esc(U[4]) + "</div></section>";
+    });
+    html += '<section class="pick" id="pick"><p><b>哪一份最像本人？</b></p><div class="choice">' +
+      cands.map(function (c, idx) { return '<label><input type="radio" name="most" value="' + c.label + '"' + (a.most_like === c.label ? " checked" : "") + "> 回答 " + (idx + 1) + "</label>"; }).join("") + "</div>";
+    if (pack.has_human) {
+      html += '<p><b>你觉得哪一份是本人亲手写的？</b></p><div class="choice">' +
+        cands.map(function (c, idx) { return '<label><input type="radio" name="guess" value="' + c.label + '"' + (a.guess_human === c.label ? " checked" : "") + "> 回答 " + (idx + 1) + "</label>"; }).join("") +
+        '<label><input type="radio" name="guess" value=""' + (!a.guess_human ? " checked" : "") + "> 不确定</label></div>";
+    }
+    html += '</section><div class="nav"><button id="prev"' + (state.i === 0 ? " disabled" : "") + '>上一个</button><button class="primary" id="next">' + (last ? "完成" : "下一个") + "</button></div>";
+    app.innerHTML = html;
+    window.scrollTo(0, 0);
+
+    app.onchange = function (e) {
+      var el = e.target;
+      if (!el.name) return;
+      var m = el.name.match(/^([lu])_(.+)$/);
+      if (m) {
+        var r = a.ratings[m[2]] || (a.ratings[m[2]] = {});
+        r[m[1] === "l" ? "likeness" : "usable"] = Number(el.value);
+        var box = document.getElementById("c_" + m[2]);
+        if (box && r.likeness && r.usable) box.classList.remove("missing");
+      } else if (el.name === "most") { a.most_like = el.value; document.getElementById("pick").classList.remove("missing"); }
+      else if (el.name === "guess") a.guess_human = el.value || null;
+      save();
+    };
+    document.getElementById("prev").onclick = function () { state.i--; save(); renderTask(); };
+    document.getElementById("next").onclick = function () {
+      var firstMissing = null;
+      cands.forEach(function (c) {
+        var r = a.ratings[c.label] || {};
+        var box = document.getElementById("c_" + c.label);
+        if (!r.likeness || !r.usable) { box.classList.add("missing"); firstMissing = firstMissing || box; }
+      });
+      if (!a.most_like) { document.getElementById("pick").classList.add("missing"); firstMissing = firstMissing || document.getElementById("pick"); }
+      if (firstMissing) { firstMissing.scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+      if (last) renderDone(); else { state.i++; save(); renderTask(); }
+    };
+  }
+
+  function exportData() {
+    var ratings = [], picks = [];
+    pack.tasks.forEach(function (t) {
+      var a = state.answers[t.task_id];
+      if (!a) return;
+      Object.keys(a.ratings).forEach(function (label) {
+        var r = a.ratings[label];
+        ratings.push({ task_id: t.task_id, label: label, likeness: r.likeness || null, usable: r.usable || null });
+      });
+      picks.push({ task_id: t.task_id, most_like: a.most_like || null, guess_human: a.guess_human || null });
+    });
+    return { format: "twinkit-ratings/1", pack_id: pack.pack_id, rater: state.rater, created: new Date().toISOString(), ratings: ratings, picks: picks };
+  }
+
+  function fileName() {
+    // 只用 ASCII：部分浏览器遇到中文文件名会把下载文件改名成 "download"
+    var slug = state.rater.id.replace(/[^A-Za-z0-9_-]+/g, "").slice(0, 24);
+    return "ratings-" + String(pack.pack_id).replace(/[^A-Za-z0-9_-]+/g, "") + "-" + (slug ? slug + "-" : "") + seedFrom(state.rater.id).toString(36) + ".json";
+  }
+
+  function renderDone() {
+    var data = JSON.stringify(exportData(), null, 2);
+    var file = fileName();
+    var left = pack.tasks.length - doneCount(state);
+    app.innerHTML = "<h1>完成，谢谢！</h1>" + (left ? '<p style="color:#cf222e">还有 ' + left + " 个任务没做完，可以先回去补上。</p>" : "") +
+      "<p>请把评分文件发回给组织者：</p><p><button class=\"primary\" id=\"dl\">下载评分文件</button></p>" +
+      '<p class="muted">文件名：<code>' + esc(file) + "</code>。如果下载下来的名字不一样（比如叫 download），直接发过去也没关系。</p>" +
+      '<p class="muted">下载不了的话，复制下面的全部内容发过去也可以：</p><textarea readonly id="raw"></textarea>' +
+      '<p><button id="copy">复制内容</button> <button id="back">回去修改</button></p>';
+    var raw = document.getElementById("raw");
+    raw.value = data;
+    document.getElementById("dl").onclick = function () {
+      var blob = new Blob([data], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = file;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    };
+    document.getElementById("copy").onclick = function () {
+      var btn = this;
+      function ok() { btn.textContent = "已复制"; setTimeout(function () { btn.textContent = "复制内容"; }, 1500); }
+      raw.focus(); raw.select();
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(data).then(ok, function () { try { document.execCommand("copy"); ok(); } catch (e) {} });
+      else { try { document.execCommand("copy"); ok(); } catch (e) {} }
+    };
+    document.getElementById("back").onclick = function () { renderTask(); };
+  }
+
+  if (valid(pack)) { renderStart(); return; }
+  var q = new URLSearchParams(location.search).get("pack");
+  if (q) {
+    fetch(q).then(function (r) { return r.json(); }).then(function (p) {
+      if (!valid(p)) throw new Error("不是 TwinKit 盲评包");
+      pack = p; renderStart();
+    }).catch(function (e) { renderLoad("加载失败：" + e.message); });
+  } else renderLoad();
+})();
+</script>
+</body>
+</html>

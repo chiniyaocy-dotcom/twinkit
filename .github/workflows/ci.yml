@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+      - run: node scripts/validate.mjs examples/zhou-yu --strict
+      - run: node scripts/build.mjs --persona examples/zhou-yu
+      - run: node scripts/gallery-check.mjs
+      - run: node eval/run.mjs --dry-run --persona examples/zhou-yu --out /tmp/eval-dry-run
+      - name: 如果仓库里有自己的人格包，也检查一遍
+        run: if [ -f persona/persona.md ]; then node scripts/validate.mjs persona; fi

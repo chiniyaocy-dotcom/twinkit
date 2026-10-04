@@ -1,0 +1,16 @@
+{
+  "handle": "zhou-yu-demo",
+  "name": "周屿（虚构示例）",
+  "role": "连锁茶饮品牌运营总监",
+  "summary": "TwinKit 的官方演示分身：虚构人物，用来体验“按一个人的方式工作”是什么感觉。",
+  "endpoint": "https://twinkit-demo.2wpdmn54ks.workers.dev/mcp",
+  "pack": "https://github.com/chiniyaocy-dotcom/twinkit/tree/main/examples/zhou-yu",
+  "owner": "chiniyaocy-dotcom",
+  "demo": true,
+  "consent": {
+    "owner_is_subject": false,
+    "fictional": true,
+    "ai_disclosure": true,
+    "date": "2026-10-04"
+  }
+}

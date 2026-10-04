@@ -1,0 +1,31 @@
+# TwinKit · Cloudflare Workers 配置
+# 部署：npx wrangler deploy（会先运行 node scripts/build.mjs 生成 dist/worker.js）
+name = "my-twin"                      # 改成你的分身名，会出现在 https://<name>.<你的子域>.workers.dev
+main = "dist/worker.js"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[build]
+command = "node scripts/build.mjs"
+
+[vars]
+# "true"：公开，任何人都能接入（适合放进 Gallery）
+# "false"：私有，需要令牌。设置令牌：npx wrangler secret put TWIN_TOKEN
+TWIN_PUBLIC = "true"
+# 是否在 /health 公开“近 28 天活跃天数”（需要下面的 KV；Gallery 用它统计“持续使用”）
+TWIN_PUBLIC_STATS = "false"
+
+# 每个 IP 每 60 秒最多 60 次请求，防止被刷。不需要可以删掉这一段。
+[[ratelimits]]
+name = "TWIN_RATE_LIMITER"
+namespace_id = "2701"
+simple = { limit = 60, period = 60 }
+
+# 可选：活跃天数统计。只记录“哪天有过工具调用”，不记录内容、IP 或任何个人信息。
+# 创建：npx wrangler kv namespace create TWIN_STATS，然后把 id 填到下面并取消注释。
+# [[kv_namespaces]]
+# binding = "TWIN_STATS"
+# id = "<你的 KV namespace id>"
+
+[observability]
+enabled = true
