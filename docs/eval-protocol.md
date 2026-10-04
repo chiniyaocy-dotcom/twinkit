@@ -1,6 +1,6 @@
 # 评测协议：数字分身像不像本人？（预先登记版 v1）
 
-这份协议在看到任何结果**之前**写好并公开。每个参与者在生成回答之前，要在 Discussions 的“评测登记”帖里贴出自己任务文件的 SHA-256（`shasum -a 256 eval/tasks.md`）和日期，之后不再修改任务。
+这份协议在看到任何结果**之前**写好并公开。每个参与者在生成回答之前，要在 Discussions 的[“评测登记”帖](https://github.com/chiniyaocy-dotcom/twinkit/discussions/2)里贴出自己任务文件的 SHA-256（`shasum -a 256 eval/tasks.md`）和日期，之后不再修改任务。
 
 ## 研究问题
 

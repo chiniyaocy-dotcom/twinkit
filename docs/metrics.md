@@ -20,7 +20,7 @@ TwinKit 发布后 3 个月的目标：**500+ Star、20+ 真实用户持续使用
 | 来源 | 条件 |
 |---|---|
 | A. 自己部署分身的人 | 在 Gallery 登记了本人的分身（非演示），开启了公开统计，且**近 28 天内至少 8 天**有工具调用 |
-| B. 使用分身的人（包括使用别人的分身） | 在每月的 “使用打卡” Discussion 里回复，并且**连续 2 个月**都回复 |
+| B. 使用分身的人（包括使用别人的分身） | 在每月的[“使用打卡”帖](https://github.com/chiniyaocy-dotcom/twinkit/discussions/categories/announcements)里回复，并且**连续 2 个月**都回复 |
 
 “持续使用用户数” = A 和 B 合并去重后的账号数。A 由 `gallery-check --online` 自动统计（`gallery/STATUS.md`）；B 由维护者每月人工统计并在 Discussion 里公开名单（只列 GitHub 用户名）。
 

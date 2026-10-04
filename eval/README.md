@@ -6,7 +6,7 @@
 
 复制 [tasks.example.md](tasks.example.md) 为 `eval/tasks.md`，换成你自己的 20 个真实任务。有时间的话，挑 5 个以上任务在看到 AI 输出**之前**写下你自己的版本（`### 本人答案`），用来测试评委能不能认出你。
 
-登记任务（可选但推荐）：`shasum -a 256 eval/tasks.md`，把结果贴到 Discussions 的“评测登记”帖里。
+登记任务（可选但推荐）：`shasum -a 256 eval/tasks.md`，把结果贴到 Discussions 的[“评测登记”帖](https://github.com/chiniyaocy-dotcom/twinkit/discussions/2)里。
 
 ## 1. 生成回答和盲评包
 
@@ -36,7 +36,7 @@ node eval/run.mjs --dry-run
 
 中途失败了就再运行一次同样的命令，会从断点续跑（跨天续跑时加 `--out` 指向原来的目录）。GitHub Models 免费额度有每分钟和每天的请求上限，默认每次调用间隔 4.5 秒；20 个任务 × 3 个条件 = 60 次调用。
 
-也可以在 GitHub Actions 里运行：Actions → “生成评测盲评包” → Run workflow，生成结果在 artifact 里下载。
+也可以在 GitHub Actions 里运行：Actions → “生成评测盲评包” → Run workflow，生成结果在 artifact 里下载。注意：**公开仓库**的 artifact 任何登录用户都能下载，里面有答案表 `key.json` 和全部回答——请在私有仓库里运行（用 “Use this template” 建私有仓库即可），或者在本地运行。
 
 ## 2. 请评委打分
 
