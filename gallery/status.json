@@ -1,8 +1,8 @@
 {
-  "updated": "2026-10-04T10:55:00.027Z",
+  "updated": "2026-10-04T13:27:01.249Z",
   "summary": {
-    "real_packs": 0,
-    "real_packs_online": 0,
+    "real_packs": 1,
+    "real_packs_online": 1,
     "active_twins": 0,
     "evaluated": 0
   },
@@ -12,6 +12,13 @@
     "watchers": 0
   },
   "probes": {
+    "cy": {
+      "handle": "cy",
+      "reachable": true,
+      "mcp": true,
+      "version": "0.1.0",
+      "active_days_28d": 1
+    },
     "zhou-yu-demo": {
       "handle": "zhou-yu-demo",
       "reachable": true,
