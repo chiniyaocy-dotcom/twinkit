@@ -1,6 +1,6 @@
 # Gallery 状态（自动生成，请不要手改）
 
-更新时间：2026-10-04 13:27 UTC · 指标定义见 [docs/metrics.md](../docs/metrics.md)
+更新时间：2026-10-05 07:08 UTC · 指标定义见 [docs/metrics.md](../docs/metrics.md)
 
 ## 目标进度
 
