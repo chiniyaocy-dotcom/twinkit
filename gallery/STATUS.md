@@ -1,6 +1,6 @@
 # Gallery 状态（自动生成，请不要手改）
 
-更新时间：2026-10-05 07:08 UTC · 指标定义见 [docs/metrics.md](../docs/metrics.md)
+更新时间：2026-10-12 07:25 UTC · 指标定义见 [docs/metrics.md](../docs/metrics.md)
 
 ## 目标进度
 
@@ -13,5 +13,5 @@
 
 | 分身 | 角色 | 类型 | 在线 | 近 28 天活跃天数 | 评测 |
 |---|---|---|---|---|---|
-| [姚永（CY）](https://twinkit-cy.2wpdmn54ks.workers.dev/) | 新零售全域运营负责人 | 本人 | ✅ | 1 | — |
+| [姚永（CY）](https://twinkit-cy.2wpdmn54ks.workers.dev/) | 新零售全域运营负责人 | 本人 | ✅ | 3 | — |
 | [周屿（虚构示例）](https://twinkit-demo.2wpdmn54ks.workers.dev/) | 连锁茶饮品牌运营总监 | 演示 | ✅ | 1 | — |

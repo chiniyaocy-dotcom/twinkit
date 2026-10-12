@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-05T07:08:05.424Z",
+  "updated": "2026-10-12T07:25:56.708Z",
   "summary": {
     "real_packs": 1,
     "real_packs_online": 1,
@@ -17,7 +17,7 @@
       "reachable": true,
       "mcp": true,
       "version": "0.1.0",
-      "active_days_28d": 1
+      "active_days_28d": 3
     },
     "zhou-yu-demo": {
       "handle": "zhou-yu-demo",
